@@ -36,7 +36,8 @@ namespace Sklep_a
                 for (int i = 0; i < n; i++) {
                   int indexKolejki = (int)(Math.Pow(i, 2)) % k;
                   Queue<Klient> kolejka = kolejki[indexKolejki];
-                  kolejka.Enqueue(Klient(i, m));
+                  Klient klient = new Klient(i, m);
+                  kolejka.Enqueue(klient);
                   Console.WriteLine("Klient " + klient.id + " trafia do kolejki: " + indexKolejki);
                 }
                 continue;
@@ -50,13 +51,15 @@ namespace Sklep_a
                 }
 
                 Klient klient = kolejka.Peek();
+                if (klient.zakupy.Count != 0) {
+                  int produkt = klient.zakupy.Dequeue();
+                  Console.WriteLine("Produkt " + produkt + " opuszcza klienta " + klient.id);
+                }
+
                 if (klient.zakupy.Count == 0) {
                   kolejka.Dequeue();
                   Console.WriteLine("Klient " + klient.id + " opuszcza kolejkę " + i);
-                  continue;
                 }
-                int produkt = klient.zakupy.Dequeue();
-                Console.WriteLine("Klient " + klient + " opuszcza kolejkę " + i);
               }
             }
         }
