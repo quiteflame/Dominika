@@ -22,7 +22,7 @@ namespace _1
                 case '%':
                     return b % a;
                 case '^':
-                    return b ^ a;
+                    return (int)Math.Pow(b, a);
                 default:
                     throw new Exception("Unsupported operator: " + op);
 
