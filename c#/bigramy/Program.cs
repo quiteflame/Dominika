@@ -42,15 +42,15 @@ namespace Zadania
 			return bigrams;
 		}
 
-		static List<KeyValuePair<string, int>> Frequency(string text, List<string> substr)
+		static List<KeyValuePair<string, float>> Frequency(string text, List<string> substr, int count)
 		{
-			List<KeyValuePair<string, int>> frequency = new List<KeyValuePair<string, int>> ();
+			List<KeyValuePair<string, float>> frequency = new List<KeyValuePair<string, float>> ();
 			foreach (string b in substr) {
-				int count = Regex.Matches (text, b).Count;
-				frequency.Add (new KeyValuePair<string, int>(b, count));
+				float c = Regex.Matches (text, b).Count / (float)count * 100;
+				frequency.Add (new KeyValuePair<string, float>(b, c));
 			}
 
-			return frequency;
+			return frequency.OrderByDescending(o => o.Value).ToList();
 		}
 
 		static string ReadFile(string path)
@@ -71,13 +71,71 @@ namespace Zadania
 			}
 		}
 
+		static List<KeyValuePair<string, float>> PrepareLanguageFrequency(string path)
+		{
+			List<KeyValuePair<string, float>> list = new List<KeyValuePair<string, float>> ();
+			foreach (string line in File.ReadLines(path)) 
+			{
+				string[] component = line.Split (';');
+				string letter = component[0].ToLower().Trim();
+				float freq = float.Parse(component[1].Trim());
+
+				list.Add (new KeyValuePair<string, float>(letter, freq));
+			}
+
+			return list.OrderByDescending(o => o.Value).ToList();
+		}
+
+		static List<KeyValuePair<string, float>> PrepareLanguageMonoFrequency(string prefix)
+		{
+			return PrepareLanguageFrequency(prefix + "_mono.txt");
+		}
+
+		static List<KeyValuePair<string, float>> PrepareLanguageBiFrequency(string prefix)
+		{
+			return PrepareLanguageFrequency(prefix + "_bi.txt");
+		}
+
+		static float Find(List<KeyValuePair<string, float>> source, string value)
+		{
+			foreach (KeyValuePair<string, float> pair in source) {
+				if (pair.Key == value) {
+					return pair.Value;
+				}
+			}
+
+			return 0;
+		}
+
+		static float DegreeOfDiff(List<KeyValuePair<string, float>> source, List<KeyValuePair<string, float>> target)
+		{
+			List<float> diff = new List<float>();
+
+			foreach (KeyValuePair<string, float> pair in source) {
+				diff.Add ((float)Math.Abs(pair.Value - Find(target, pair.Key)));
+			}
+
+			return diff.Sum () / source.Count * 100;
+		}
+
 		public static void Main (string[] args)
 		{
-			string text = ReadFile ("ang.txt").ToLower();
+			string prefix = "ang";
+			string text = ReadFile (prefix + ".txt").ToLower();
 			string cleanText = RemoveDiacritics (text);
+			int numberOfLetters = cleanText.Count (char.IsLetter);
+			int numberOfBigrams = numberOfLetters / 2;
 			List<string> bigrams = GenerateBigrams ();
-			List<KeyValuePair<string, int>> freqBigrams = Frequency (cleanText, bigrams);
-			List<KeyValuePair<string, int>> freqAlpha = Frequency (cleanText, alphabet);
+			List<KeyValuePair<string, float>> textFreqBigrams = Frequency (cleanText, bigrams, numberOfBigrams);
+			List<KeyValuePair<string, float>> textFreqMono = Frequency (cleanText, alphabet, numberOfLetters);
+			List<KeyValuePair<string, float>> languageFreqBigrams = PrepareLanguageBiFrequency (prefix);
+			List<KeyValuePair<string, float>> languageFreqMono = PrepareLanguageMonoFrequency (prefix);
+
+			float degreeOfDiffLetters = DegreeOfDiff (languageFreqMono, textFreqMono);
+			Console.WriteLine ("Dla liter na " + (100 - degreeOfDiffLetters) + "% jezyk zgadza sie z przewidywaniami");
+
+			float degreeOfDiffBigrams = DegreeOfDiff (languageFreqBigrams, textFreqBigrams);
+			Console.WriteLine ("Dla bigramów na " + (100 - degreeOfDiffBigrams) + "% jezyk zgadza sie z przewidywaniami");
 		}
 	}
 }
